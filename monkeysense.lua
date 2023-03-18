@@ -38,7 +38,7 @@ local easing = require "gamesense/easing"
 --#endregion
 
 --#region variables
-local VERSION = "1.0.0"
+local VERSION = "1.0.1"
 local monkeypng = images.load_png(readfile("monkey.png"))
 local monkeygreen = images.load_png(readfile("monkeygreen.png"))
 local monkeyred = images.load_png(readfile("monkeyred.png"))
@@ -174,14 +174,14 @@ local menu = {
     end),
     delete_inactive = ui_new_button("AA", "Anti-aimbot angles", GRAY .. "Delete", function()
     end),
+    import_config = ui_new_button("AA", "Anti-aimbot angles", WHITE .. "Import config", function()
+    end),
+    export_config = ui_new_button("AA", "Anti-aimbot angles", WHITE .. "Export config", function()
+    end),
     updater_label = ui_new_label("AA", "Anti-aimbot angles", "Version x.x.x is available."),
     download = ui_new_button("AA", "Anti-aimbot angles", "Download update", function()
     end),
     ignore = ui_new_button("AA", "Anti-aimbot angles", "Ignore", function()
-    end),
-    import_config = ui_new_button("AA", "Anti-aimbot angles", WHITE .. "Import config", function()
-    end),
-    export_config = ui_new_button("AA", "Anti-aimbot angles", WHITE .. "Export config", function()
     end),
     -- Conditions editing screen (1)
     cond_type = ui_new_combobox("AA", "Anti-aimbot angles", "Conditions type", { "AND", "OR" }),

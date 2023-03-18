@@ -37,12 +37,45 @@ local clipboard = require 'gamesense/clipboard'
 local easing = require "gamesense/easing"
 --#endregion
 
+--#region helper functions
+function lerp(a, b, t) return a * (1 - t) + b * t end
+
+local color_print = function(...)
+    for _, data in pairs({ ... }) do
+        local r, g, b, text = 255, 255, 255, data
+        if type(data) == 'table' then
+            r, g, b, text = unpack(data)
+        end
+
+        client.color_log(r, g, b, text .. '\0')
+    end
+    client.color_log(255, 255, 255, ' ') -- change the color of the log in the top corner back to white :P
+end
+
+function math.clamp(x, min, max)
+    if x < min then return min end
+    if x > max then return max end
+    return x
+end
+
+-- Returns the full path to the lua
+--- @credit Flux - uid 2885
+--- @return string path The full path to the lua, including its extension
+local function get_file_path()
+    -- _ should always be false
+    local _, err = pcall(function()
+        _G()
+    end)
+    return _ or err:match('\\(.*):[0-9]'):gsub("\\", "/")
+end
+--#endregion
+
 --#region variables
-local VERSION = "1.0.1"
-local monkeypng = images.load_png(readfile("monkey.png"))
-local monkeygreen = images.load_png(readfile("monkeygreen.png"))
-local monkeyred = images.load_png(readfile("monkeyred.png"))
-local monkeyblue = images.load_png(readfile("monkeyblue.png"))
+local VERSION = "1.0.2"
+local monkeypng = readfile("monkey.png") and images.load_png(readfile("monkey.png")) or nil
+local monkeyred = readfile("monkeyred.png") and images.load_png(readfile("monkeyred.png")) or nil
+local monkeygreen = readfile("monkeygreen.png") and images.load_png(readfile("monkeygreen.png")) or nil
+local monkeyblue = readfile("monkeyblue.png") and images.load_png(readfile("monkeyblue.png")) or nil
 local notifications = {}
 local hitgroup_names = { 'generic', 'head', 'chest', 'stomach', 'left arm', 'right arm', 'left leg', 'right leg', 'neck',
     '?', 'gear' }
@@ -223,39 +256,6 @@ local menu = {
 }
 
 local xoffset = 0
---#endregion
-
---#region helper functions
-function lerp(a, b, t) return a * (1 - t) + b * t end
-
-local color_print = function(...)
-    for _, data in pairs({ ... }) do
-        local r, g, b, text = 255, 255, 255, data
-        if type(data) == 'table' then
-            r, g, b, text = unpack(data)
-        end
-
-        client.color_log(r, g, b, text .. '\0')
-    end
-    client.color_log(255, 255, 255, ' ') -- change the color of the log in the top corner back to white :P
-end
-
-function math.clamp(x, min, max)
-    if x < min then return min end
-    if x > max then return max end
-    return x
-end
-
--- Returns the full path to the lua
---- @credit Flux - uid 2885
---- @return string path The full path to the lua, including its extension
-local function get_file_path()
-    -- _ should always be false
-    local _, err = pcall(function()
-        _G()
-    end)
-    return _ or err:match('\\(.*):[0-9]'):gsub("\\", "/")
-end
 --#endregion
 
 --#region aa builder
@@ -992,7 +992,7 @@ function renderer.outlined_rounded_rectangle(x, y, w, h, r, g, b, a, radius, thi
         { x + w - thickness, y,                          thickness,      h - radius * 2 } }
 
     local data2 = { { x + radius, y,  w - radius * 2, h - radius * 2 },
-        { x + radius, y - radius, w - radius * 2, radius },
+        { x + radius, y - radius,         w - radius * 2, radius },
         { x + radius, y + h - radius * 2, w - radius * 2, radius }, { x, y, radius, h - radius * 2 },
         { x + w - radius, y, radius, h - radius * 2 } }
 
@@ -1368,13 +1368,49 @@ local function on_init()
         for i, v in ipairs(cache[2]) do
             blocks[#blocks + 1] = Block.to_block(v)
         end
+        if readfile("monkey.png") and readfile("monkeyred.png") and readfile("monkeygreen.png") and readfile("monkeyblue.png") then
+            addNotification("monkeysense reloaded successfully!", 4, monkeyblue, {0,0,255})
+        end
     else
         load_config()
+        if readfile("monkey.png") and readfile("monkeyred.png") and readfile("monkeygreen.png") and readfile("monkeyblue.png") then
+            addNotification("monkeysense loaded successfully!", 4, monkeyblue, {0,0,255})
+        end
     end
 
     set_references_visibility(false)
     update_visibility(0)
 
+    if not readfile("monkey.png") or not readfile("monkeyred.png") or not readfile("monkeygreen.png") or not readfile("monkeyblue.png") then
+        http.get("https://raw.githubusercontent.com/HypeLevels/monkeysense/main/monkey.png", function(success, response)
+            if success and response.status == 200 then
+                writefile("monkey.png", response.body)
+                monkeypng = images.load_png(readfile("monkey.png"))
+            end
+        end)
+        http.get("https://raw.githubusercontent.com/HypeLevels/monkeysense/main/monkeyred.png",
+            function(success, response)
+                if success and response.status == 200 then
+                    writefile("monkeyred.png", response.body)
+                    monkeyred = images.load_png(readfile("monkeyred.png"))
+                end
+            end)
+        http.get("https://raw.githubusercontent.com/HypeLevels/monkeysense/main/monkeygreen.png",
+            function(success, response)
+                if success and response.status == 200 then
+                    writefile("monkeygreen.png", response.body)
+                    monkeygreen = images.load_png(readfile("monkeygreen.png"))
+                end
+            end)
+        http.get("https://raw.githubusercontent.com/HypeLevels/monkeysense/main/monkeyblue.png",
+            function(success, response)
+                if success and response.status == 200 then
+                    writefile("monkeyblue.png", response.body)
+                    monkeyblue = images.load_png(readfile("monkeyblue.png"))
+                end
+                client_reload_active_scripts()
+            end)
+    end
     -- Checks for an update on the github and sets the download button visible if there is one
     http.get("https://raw.githubusercontent.com/HypeLevels/monkeysense/main/version.txt", function(success, response)
         if success and response.status == 200 then
@@ -1392,23 +1428,25 @@ local function on_init()
                 -- Overwrite the current lua with the new lua from github
                 ui_set_callback(menu.download, function()
                     http.get("https://raw.githubusercontent.com/HypeLevels/monkeysense/main/monkeysense.lua",
-                    function(success, response)
-                        if success and response.status == 200 then
-                            local path = get_file_path()
-                            local body = response.body
-                            local name = _NAME
+                        function(success, response)
+                            if success and response.status == 200 then
+                                local path = get_file_path()
+                                local body = response.body
+                                local name = _NAME
 
-                            writefile(path, body)
-                            client_reload_active_scripts()
-                        end
-                    end)
+                                writefile(path, body)
+                                client_reload_active_scripts()
+                            end
+                        end)
                 end)
 
                 -- An update is available so set the update label, download button and ignore button to visible
                 update_available = true
                 ui_set(menu.updater_label,
-                string_format("%sVersion %s%s%s is available to download.", LIGHTGRAY, GREEN, cloud_version, LIGHTGRAY))
-                addNotification(string.format("Version %s is available to download.", cloud_version), 4, monkeyblue, {0, 0, 255})
+                    string_format("%sVersion %s%s%s is available to download.", LIGHTGRAY, GREEN, cloud_version,
+                        LIGHTGRAY))
+                addNotification(string.format("Version %s is available to download.", cloud_version), 4, monkeyblue,
+                    { 0, 0, 255 })
                 update_visibility()
             end
         end

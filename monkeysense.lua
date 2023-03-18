@@ -38,7 +38,7 @@ local easing = require "gamesense/easing"
 --#endregion
 
 --#region variables
-local VERSION = "2023-03-18"
+local VERSION = "2023-03-19"
 local monkeypng = images.load_png(readfile("monkey.png"))
 local monkeygreen = images.load_png(readfile("monkeygreen.png"))
 local monkeyred = images.load_png(readfile("monkeyred.png"))

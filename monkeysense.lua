@@ -78,7 +78,7 @@ end
 --#endregion
 
 --#region variables
-local VERSION = "1.0.4"
+local VERSION = "1.0.5"
 local monkeypng = loadImage("monkey.png")
 local monkeyred = loadImage("monkeyred.png")
 local monkeygreen = loadImage("monkeygreen.png")
@@ -159,11 +159,13 @@ local last_sim_time = 0
 local defensive_until = 0
 local last_origin = vector(0, 0, 0)
 local on_ground_ticks = 0
+local isLocalDefensive = false
 
 -- A list of needed menu references
 local references = {
     slow_motion = ui_reference("AA", "Other", "Slow motion"),
     slow_motion_key = select(2, ui_reference("AA", "Other", "Slow motion")),
+    mindmg = select(2, ui_reference("RAGE", "Aimbot", "Minimum Damage Override")),
     onshot_aa = ui_reference("AA", "Other", "On shot anti-aim"),
     onshot_aa_key = select(2, ui_reference("AA", "Other", "On shot anti-aim")),
     double_tap = ui_reference("RAGE", "Aimbot", "Double tap"),
@@ -806,7 +808,7 @@ local function get_conditions(cmd, local_player)
         ["Knifeable"] = is_knifeable(origin, enemies),
         ["Zeusable"] = is_zeusable(origin, enemies),
         ["Doubletapping"] = doubletapping and cmd.chokedcommands <= ui_get(references.double_tap_lag),
-        ["Defensive"] = is_defensive_active(local_player),
+        ["Defensive"] = isLocalDefensive,
         ["Terrorist"] = team_num == 2,
         ["Counter terrorist"] = team_num == 3,
         ["Dormant"] = #enemies == 0,
@@ -1072,10 +1074,18 @@ local renderIndicators = function()
     if not active_block or not entity_is_alive(entity_get_local_player()) then
         return
     end
-    local active = {}
+    local indicators = {}
+    if ui_get(references.mindmg) then
+        table_insert(indicators, {
+            text = "DMG",
+            r = 255,
+            g = 0,
+            b = 0,
+        })
+    end
     if ui_get(references.double_tap_key) then
         local charged = antiaim.get_double_tap()
-        table_insert(active, {
+        table_insert(indicators, {
             text = "DT",
             r = charged and 0 or 255,
             g = charged and 255 or 0,
@@ -1083,7 +1093,7 @@ local renderIndicators = function()
         })
     end
     if ui_get(references.onshot_aa_key) then
-        table_insert(active, {
+        table_insert(indicators, {
             text = "OSAA",
             r = 0,
             g = 255,
@@ -1091,7 +1101,7 @@ local renderIndicators = function()
         })
     end
     if ui_get(references.freestanding_key) then
-        table_insert(active, {
+        table_insert(indicators, {
             text = "FS",
             r = 255,
             g = 255,
@@ -1099,18 +1109,26 @@ local renderIndicators = function()
         })
     end
     if ui_get(references.body_aim) then
-        table_insert(active, {
+        table_insert(indicators, {
             text = "FB",
             r = 255,
             g = 255,
             b = 255
         })
     end
-    for k, v in ipairs(active) do
+    if ui_get(references.body_aim) then
+        table_insert(indicators, {
+            text = "FB",
+            r = 255,
+            g = 255,
+            b = 255
+        })
+    end
+    for k, v in ipairs(indicators) do
         renderer_text(dimensions[1] / 2 + xoffset, dimensions[2] / 2 + 49 + 10 * k, v.r, v.g, v.b, 255, "-c", 0, v.text)
     end
 
-    if ui_get(references.double_tap_key) and is_defensive_active(entity_get_local_player()) then
+    if ui_get(references.double_tap_key) and isLocalDefensive then
         renderer_text(dimensions[1] / 2, dimensions[2] / 2 - 20, 100, 100, 255, 255, "-c", 0, "DEFENSIVE")
     end
 end
@@ -1199,6 +1217,9 @@ local function on_init()
     client_set_event_callback("aim_hit", aim_hit)
     client_set_event_callback("dormant_miss", da_miss)
     client_set_event_callback("dormant_hit", da_hit)
+    client_set_event_callback("net_update_end", function()
+        isLocalDefensive = is_defensive_active(entity_get_local_player())
+    end)
 
     client_set_event_callback("shutdown", function()
         set_references_visibility(true)

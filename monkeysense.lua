@@ -71,7 +71,7 @@ end
 --#endregion
 
 --#region variables
-local VERSION = "1.0.2"
+local VERSION = "1.0.3"
 local monkeypng = readfile("monkey.png") and images.load_png(readfile("monkey.png")) or nil
 local monkeyred = readfile("monkeyred.png") and images.load_png(readfile("monkeyred.png")) or nil
 local monkeygreen = readfile("monkeygreen.png") and images.load_png(readfile("monkeygreen.png")) or nil
@@ -1382,34 +1382,17 @@ local function on_init()
     update_visibility(0)
 
     if not readfile("monkey.png") or not readfile("monkeyred.png") or not readfile("monkeygreen.png") or not readfile("monkeyblue.png") then
-        http.get("https://raw.githubusercontent.com/HypeLevels/monkeysense/main/monkey.png", function(success, response)
-            if success and response.status == 200 then
-                writefile("monkey.png", response.body)
-                monkeypng = images.load_png(readfile("monkey.png"))
+        local files = {"monkey","monkeyred","monkeygreen","monkeyblue"}
+        for k, v in ipairs(files) do
+            http.get("https://raw.githubusercontent.com/HypeLevels/monkeysense/main/" .. v ..".png", function(success, response)
+                if success and response.status == 200 then
+                    writefile(v .. ".png", response.body)
+                end
+            end)
+            if k == #files then
+                client.delay_call(1, client_reload_active_scripts)
             end
-        end)
-        http.get("https://raw.githubusercontent.com/HypeLevels/monkeysense/main/monkeyred.png",
-            function(success, response)
-                if success and response.status == 200 then
-                    writefile("monkeyred.png", response.body)
-                    monkeyred = images.load_png(readfile("monkeyred.png"))
-                end
-            end)
-        http.get("https://raw.githubusercontent.com/HypeLevels/monkeysense/main/monkeygreen.png",
-            function(success, response)
-                if success and response.status == 200 then
-                    writefile("monkeygreen.png", response.body)
-                    monkeygreen = images.load_png(readfile("monkeygreen.png"))
-                end
-            end)
-        http.get("https://raw.githubusercontent.com/HypeLevels/monkeysense/main/monkeyblue.png",
-            function(success, response)
-                if success and response.status == 200 then
-                    writefile("monkeyblue.png", response.body)
-                    monkeyblue = images.load_png(readfile("monkeyblue.png"))
-                end
-                client_reload_active_scripts()
-            end)
+        end
     end
     -- Checks for an update on the github and sets the download button visible if there is one
     http.get("https://raw.githubusercontent.com/HypeLevels/monkeysense/main/version.txt", function(success, response)

@@ -78,7 +78,7 @@ end
 --#endregion
 
 --#region variables
-local VERSION = "1.0.5"
+local VERSION = "1.0.6"
 local monkeypng = loadImage("monkey.png")
 local monkeyred = loadImage("monkeyred.png")
 local monkeygreen = loadImage("monkeygreen.png")

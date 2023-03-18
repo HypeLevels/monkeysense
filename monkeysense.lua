@@ -38,7 +38,7 @@ local easing = require "gamesense/easing"
 --#endregion
 
 --#region variables
-local VERSION = "2023-03-19"
+local VERSION = "1.0.0"
 local monkeypng = images.load_png(readfile("monkey.png"))
 local monkeygreen = images.load_png(readfile("monkeygreen.png"))
 local monkeyred = images.load_png(readfile("monkeyred.png"))
@@ -986,12 +986,13 @@ function renderer.outlined_rounded_rectangle(x, y, w, h, r, g, b, a, radius, thi
     local data_circle2 = { { x + radius, y, 180 }, { x + w - radius, y, 90 }, { x + radius, y + h - radius * 2, 270 },
         { x + w - radius, y + h - radius * 2, 0 } }
 
-    local data = { { x + radius, y - radius,  w - radius * 2, thickness },
-        { x + radius, y + h - radius - thickness, w - radius * 2, thickness },
-        { x,          y,                          thickness,      h - radius * 2 },
-        { x + w - thickness, y, thickness, h - radius * 2 } }
+    local data = { { x + radius, y - radius,         w - radius * 2, thickness },
+        { x + radius,        y + h - radius - thickness, w - radius * 2, thickness },
+        { x,                 y,                          thickness,      h - radius * 2 },
+        { x + w - thickness, y,                          thickness,      h - radius * 2 } }
 
-    local data2 = { { x + radius, y,  w - radius * 2, h - radius * 2 }, { x + radius, y - radius, w - radius * 2, radius },
+    local data2 = { { x + radius, y,  w - radius * 2, h - radius * 2 },
+        { x + radius, y - radius, w - radius * 2, radius },
         { x + radius, y + h - radius * 2, w - radius * 2, radius }, { x, y, radius, h - radius * 2 },
         { x + w - radius, y, radius, h - radius * 2 } }
 
@@ -1033,13 +1034,13 @@ local renderNotification = function()
             table.remove(notifications, 1)
         end
         v.tween = easing.linear(globals.frametime(), v.tween,
-        (globals_realtime() < v.endTime - 0.05 and 35 or -100) - v.tween + (k * 35), .1)
+            (globals_realtime() < v.endTime - 0.05 and 35 or -100) - v.tween + (k * 35), .1)
         if globals_realtime() < v.endTime then
             local textSize = { renderer_measure_text("bdc", v.text) }
             renderer.outlined_rounded_rectangle(dimensions[1] / 2 - (textSize[1] + 34) / 2, dimensions[2] - 40 - v.tween,
-            textSize[1] + 40, textSize[2] + 15, v.r, v.g, v.b, 255, 6, 1, 1)
+                textSize[1] + 40, textSize[2] + 15, v.r, v.g, v.b, 255, 6, 1, 1)
             v.png:draw(dimensions[1] / 2 - (textSize[1] + 40) / 2 + 7, dimensions[2] - 37 - v.tween, 20, 20, 255, 255,
-            255, 255, true, "")
+                255, 255, true, "")
             renderer_text(dimensions[1] / 2 + 10, dimensions[2] - 27 - v.tween, 255, 255, 255, 255, "bdc", 0, v.text)
         else
             table.remove(notifications, k)
@@ -1374,46 +1375,43 @@ local function on_init()
     set_references_visibility(false)
     update_visibility(0)
 
-    if not VERSION:find("d$") then
-        -- Checks for an update on the github and sets the download button visible if there is one
-        http.get("https://raw.githubusercontent.com/HypeLevels/monkeysense/main/version.txt", function(success, response)
-            if success and response.status == 200 then
-                local cloud_version = response.body
-                cloud_version = cloud_version:gsub("\n$", "")
+    -- Checks for an update on the github and sets the download button visible if there is one
+    http.get("https://raw.githubusercontent.com/HypeLevels/monkeysense/main/version.txt", function(success, response)
+        if success and response.status == 200 then
+            local cloud_version = response.body
+            cloud_version = cloud_version:gsub("\n$", "")
 
-                --local ignored_version = database_read("new_aa_ignore_version") or nil
-                --if cloud_version ~= VERSION and cloud_version ~= ignored_version then
-                if cloud_version ~= VERSION and not ignore_update then
-                    -- Ignore the update until the next update
-                    ui_set_callback(menu.ignore, function()
-                        update_available = false
-                        ignore_update = true
-                        --database_write("new_aa_ignore_version", cloud_version)
-                        update_visibility()
-                    end)
-
-                    -- Overwrite the current lua with the new lua from github
-                    ui_set_callback(menu.download, function()
-                        http.get("https://raw.githubusercontent.com/HypeLevels/monkeysense/main/monkeysense.lua", function(success, response)
-                            if success and response.status == 200 then
-                                local path = get_file_path()
-                                local body = response.body
-                                local name = _NAME
-
-                                writefile(path, body)
-                                client_reload_active_scripts()
-                            end
-                        end)
-                    end)
-
-                    -- An update is available so set the update label, download button and ignore button to visible
-                    update_available = true
-                    ui_set(menu.updater_label, string_format("%sVersion %s%s%s is available to download.", LIGHTGRAY, GREEN, cloud_version, LIGHTGRAY))
+            if cloud_version ~= VERSION and not ignore_update then
+                -- Ignore the update until the next update
+                ui_set_callback(menu.ignore, function()
+                    update_available = false
+                    ignore_update = true
                     update_visibility()
-                end
+                end)
+
+                -- Overwrite the current lua with the new lua from github
+                ui_set_callback(menu.download, function()
+                    http.get("https://raw.githubusercontent.com/HypeLevels/monkeysense/main/monkeysense.lua",
+                    function(success, response)
+                        if success and response.status == 200 then
+                            local path = get_file_path()
+                            local body = response.body
+                            local name = _NAME
+
+                            writefile(path, body)
+                            client_reload_active_scripts()
+                        end
+                    end)
+                end)
+
+                -- An update is available so set the update label, download button and ignore button to visible
+                update_available = true
+                ui_set(menu.updater_label,
+                string_format("%sVersion %s%s%s is available to download.", LIGHTGRAY, GREEN, cloud_version, LIGHTGRAY))
+                update_visibility()
             end
-        end)
-    end
+        end
+    end)
 
     -- Create a global table for other scripts to use
     _G.builder = {}

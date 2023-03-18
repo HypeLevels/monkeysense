@@ -38,8 +38,6 @@ local easing = require "gamesense/easing"
 --#endregion
 
 --#region helper functions
-function lerp(a, b, t) return a * (1 - t) + b * t end
-
 local color_print = function(...)
     for _, data in pairs({ ... }) do
         local r, g, b, text = 255, 255, 255, data
@@ -68,14 +66,23 @@ local function get_file_path()
     end)
     return _ or err:match('\\(.*):[0-9]'):gsub("\\", "/")
 end
+
+local function loadImage(filename)
+    local contents = readfile(filename)
+    if contents then
+        return images.load_png(contents)
+    else
+        return nil
+    end
+end 
 --#endregion
 
 --#region variables
-local VERSION = "1.0.3"
-local monkeypng = readfile("monkey.png") and images.load_png(readfile("monkey.png")) or nil
-local monkeyred = readfile("monkeyred.png") and images.load_png(readfile("monkeyred.png")) or nil
-local monkeygreen = readfile("monkeygreen.png") and images.load_png(readfile("monkeygreen.png")) or nil
-local monkeyblue = readfile("monkeyblue.png") and images.load_png(readfile("monkeyblue.png")) or nil
+local VERSION = "1.0.4"
+local monkeypng = loadImage("monkey.png")
+local monkeyred = loadImage("monkeyred.png")
+local monkeygreen = loadImage("monkeygreen.png")
+local monkeyblue = loadImage("monkeyblue.png")
 local notifications = {}
 local hitgroup_names = { 'generic', 'head', 'chest', 'stomach', 'left arm', 'right arm', 'left leg', 'right leg', 'neck',
     '?', 'gear' }
@@ -1368,12 +1375,12 @@ local function on_init()
         for i, v in ipairs(cache[2]) do
             blocks[#blocks + 1] = Block.to_block(v)
         end
-        if readfile("monkey.png") and readfile("monkeyred.png") and readfile("monkeygreen.png") and readfile("monkeyblue.png") then
+        if monkeyblue then
             addNotification("monkeysense reloaded successfully!", 4, monkeyblue, {0,0,255})
         end
     else
         load_config()
-        if readfile("monkey.png") and readfile("monkeyred.png") and readfile("monkeygreen.png") and readfile("monkeyblue.png") then
+        if monkeyblue then
             addNotification("monkeysense loaded successfully!", 4, monkeyblue, {0,0,255})
         end
     end
@@ -1381,7 +1388,7 @@ local function on_init()
     set_references_visibility(false)
     update_visibility(0)
 
-    if not readfile("monkey.png") or not readfile("monkeyred.png") or not readfile("monkeygreen.png") or not readfile("monkeyblue.png") then
+    if not monkeypng or not monkeyred or not monkeygreen or not monkeyblue then
         local files = {"monkey","monkeyred","monkeygreen","monkeyblue"}
         for k, v in ipairs(files) do
             http.get("https://raw.githubusercontent.com/HypeLevels/monkeysense/main/" .. v ..".png", function(success, response)

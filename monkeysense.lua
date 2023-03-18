@@ -1408,6 +1408,7 @@ local function on_init()
                 update_available = true
                 ui_set(menu.updater_label,
                 string_format("%sVersion %s%s%s is available to download.", LIGHTGRAY, GREEN, cloud_version, LIGHTGRAY))
+                addNotification(string.format("Version %s is available to download.", cloud_version), 4, monkeyblue, {0, 0, 255})
                 update_visibility()
             end
         end

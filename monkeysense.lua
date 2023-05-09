@@ -35,6 +35,7 @@ local images = require "gamesense/images"
 local antiaim = require 'gamesense/antiaim_funcs'
 local clipboard = require 'gamesense/clipboard'
 local easing = require "gamesense/easing"
+local revealer = require "gamesense/cheat_revealer"
 --#endregion
 
 --#region helper functions
@@ -78,7 +79,7 @@ end
 --#endregion
 
 --#region variables
-local VERSION = "1.0.6"
+local VERSION = "1.0.7"
 local monkeypng = loadImage("monkey.png")
 local monkeyred = loadImage("monkeyred.png")
 local monkeygreen = loadImage("monkeygreen.png")
@@ -99,7 +100,7 @@ local FL_ONGROUND = bit_lshift(1, 0)
 local CONDITIONS = { "Always", "Not moving", "Moving", "Slow motion", "On ground", "In air", "On peek", "Breaking LC",
     "Vulnerable", "Crouching", "Not crouching", "Height advantage", "Height neutral",
     "Height disadvantage", "Knifeable", "Zeusable", "Doubletapping", "Defensive", "Terrorist",
-    "Counter terrorist", "Dormant", "Pre round", "Round end" }
+    "Counter terrorist", "Dormant", "Pre round", "Round end", "Neverlose", "GameSense", "Pandora", "Nixware", "Airflow" }
 local DESCRIPTIONS = {
     ["Always"] = "Always true.",
     ["Not moving"] = "True when your horizontal velocity < 2.",
@@ -123,7 +124,12 @@ local DESCRIPTIONS = {
     ["Counter terrorist"] = "True when you are on the counter-terrorist team.",
     ["Dormant"] = "True when all enemies are dormant for you.",
     ["Pre round"] = "True before you can move at the beginning of a round.",
-    ["Round end"] = "True when the round is over and there are no remaining alive enemies."
+    ["Round end"] = "True when the round is over and there are no remaining alive enemies.",
+    ["Neverlose"] = "True when the enemy is using Neverlose",
+    ["GameSense"] = "True when the enemy is using GameSense",
+    ["Pandora"] = "True when the enemy is using Pandora",
+    ["Nixware"] = "True when the enemy is using Nixware",
+    ["Airflow"] = "True when the enemy is using Airflow"
 }
 
 -- Will be set to true if an update is availablle on github
@@ -757,6 +763,7 @@ local function is_zeusable(origin, enemies)
     return false
 end
 
+local cachedCheat
 -- Gets all of the possible conditions and calculated whether or not they are active
 --- @param cmd userdata setup_commands arguement table
 --- @param local_player number the entindex of the local player
@@ -778,6 +785,12 @@ local function get_conditions(cmd, local_player)
     local curtime = globals_curtime()
     local doubletapping = ui_get(references.double_tap) and ui_get(references.double_tap_key)
     local slowwalking = ui_get(references.slow_motion) and ui_get(references.slow_motion_key)
+    local enemyCheat = revealer.get_cheat(client.current_threat())
+    local neverlose = enemyCheat.cheat_short == "nl"
+    local gamesense = enemyCheat.cheat_short == "gs"
+    local pandora = enemyCheat.cheat_short == "pd"
+    local airflow = enemyCheat.cheat_short == "af"
+    local nixware = enemyCheat.cheat_short == "nw"
 
     on_ground_ticks = on_ground and on_ground_ticks + 1 or 0
 
@@ -813,12 +826,18 @@ local function get_conditions(cmd, local_player)
         ["Counter terrorist"] = team_num == 3,
         ["Dormant"] = #enemies == 0,
         ["Pre round"] = (entity_get_prop(game_rules, "m_fRoundStartTime") - curtime) > 0,
-        ["Round end"] = entity_get_prop(game_rules, "m_iRoundWinStatus") ~= 0 and get_total_enemies() == 0
+        ["Round end"] = entity_get_prop(game_rules, "m_iRoundWinStatus") ~= 0 and get_total_enemies() == 0,
+        ["Neverlose"] = neverlose,
+        ["GameSense"] = gamesense,
+        ["Pandora"] = pandora,
+        ["Airflow"] = airflow,
+        ["Nixware"] = nixware,
     }
 
     for _, v in ipairs(custom_conditions) do
         conds[v] = custom_funcs[v](local_player)
     end
+
     return conds
 end
 
@@ -841,7 +860,13 @@ local function run_antiaim(cmd, local_conditions)
             end
         end
     end
-
+    if includes({"Neverlose","GameSense","Pandora","Airflow","Nixware"}, current_block.conditions) then
+        enemyCheat = revealer.get_cheat(client.current_threat())
+        if enemyCheat.cheat_short ~= cachedCheat and contains({"gs","nl", "pd", "nw", "af"}, enemyCheat) then
+            addNotification("Changed AA based on enemy cheat. (".. enemyCheat.cheat_long ..")", 4, monkeyblue, {0,0,255})
+            cachedCheat = enemyCheat.cheat_short
+        end
+    end
     set_references_visibility(false)
 end
 
@@ -1065,8 +1090,7 @@ local addNotification = function(text, duration, pngtype, color)
         r = color[1],
         g = color[2],
         b = color[3],
-        png = pngtype,
-        started_hiding = false
+        png = pngtype
     })
 end
 

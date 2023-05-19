@@ -79,7 +79,7 @@ end
 --#endregion
 
 --#region variables
-local VERSION = "1.0.8"
+local VERSION = "1.0.9"
 local monkeypng = loadImage("monkey.png")
 local monkeyred = loadImage("monkeyred.png")
 local monkeygreen = loadImage("monkeygreen.png")
@@ -290,6 +290,8 @@ local function includes(tab, val)
     return false
 end
 
+local cachedCheat = "none"
+
 --- @class Block
 --- @field name string The name of the block that appears in the menu
 --- @field enabled boolean False if the block should be ignored when running anti-aim
@@ -470,6 +472,13 @@ do
 
         if active_block ~= self then
             active_block = self
+        end
+        enemyCheat = revealer.get_cheat(client.current_threat())
+        if includes({"Neverlose","GameSense","Pandora","Airflow","Nixware"}, self.conditions) then
+            if enemyCheat.cheat_short ~= cachedCheat and includes({"gs","nl", "pd", "nw", "af"}, enemyCheat) then
+                addNotification("Changed AA based on enemy cheat. (".. enemyCheat.cheat_long ..")", 4, monkeyblue, {0,0,255})
+                cachedCheat = enemyCheat.cheat_short
+            end
         end
     end
 
@@ -763,7 +772,6 @@ local function is_zeusable(origin, enemies)
     return false
 end
 
-local cachedCheat
 -- Gets all of the possible conditions and calculated whether or not they are active
 --- @param cmd userdata setup_commands arguement table
 --- @param local_player number the entindex of the local player
@@ -856,13 +864,6 @@ local function run_antiaim(cmd, local_conditions)
         for i, block in ipairs(blocks) do
             if (block:conditions_met(local_conditions) or i == #blocks) and block.enabled then
                 block:set_antiaim(cmd)
-                if includes({"Neverlose","GameSense","Pandora","Airflow","Nixware"}, block.conditions) then
-                    enemyCheat = revealer.get_cheat(client.current_threat())
-                    if enemyCheat.cheat_short ~= cachedCheat and contains({"gs","nl", "pd", "nw", "af"}, enemyCheat) then
-                        addNotification("Changed AA based on enemy cheat. (".. enemyCheat.cheat_long ..")", 4, monkeyblue, {0,0,255})
-                        cachedCheat = enemyCheat.cheat_short
-                    end
-                end
                 break -- bad coding practice but it works so Im not changing it
             end
         end

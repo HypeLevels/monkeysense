@@ -79,7 +79,7 @@ end
 --#endregion
 
 --#region variables
-local VERSION = "1.0.7"
+local VERSION = "1.0.8"
 local monkeypng = loadImage("monkey.png")
 local monkeyred = loadImage("monkeyred.png")
 local monkeygreen = loadImage("monkeygreen.png")
@@ -856,15 +856,15 @@ local function run_antiaim(cmd, local_conditions)
         for i, block in ipairs(blocks) do
             if (block:conditions_met(local_conditions) or i == #blocks) and block.enabled then
                 block:set_antiaim(cmd)
+                if includes({"Neverlose","GameSense","Pandora","Airflow","Nixware"}, block.conditions) then
+                    enemyCheat = revealer.get_cheat(client.current_threat())
+                    if enemyCheat.cheat_short ~= cachedCheat and contains({"gs","nl", "pd", "nw", "af"}, enemyCheat) then
+                        addNotification("Changed AA based on enemy cheat. (".. enemyCheat.cheat_long ..")", 4, monkeyblue, {0,0,255})
+                        cachedCheat = enemyCheat.cheat_short
+                    end
+                end
                 break -- bad coding practice but it works so Im not changing it
             end
-        end
-    end
-    if includes({"Neverlose","GameSense","Pandora","Airflow","Nixware"}, current_block.conditions) then
-        enemyCheat = revealer.get_cheat(client.current_threat())
-        if enemyCheat.cheat_short ~= cachedCheat and contains({"gs","nl", "pd", "nw", "af"}, enemyCheat) then
-            addNotification("Changed AA based on enemy cheat. (".. enemyCheat.cheat_long ..")", 4, monkeyblue, {0,0,255})
-            cachedCheat = enemyCheat.cheat_short
         end
     end
     set_references_visibility(false)

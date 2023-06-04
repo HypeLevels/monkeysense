@@ -79,7 +79,7 @@ end
 --#endregion
 
 --#region variables
-local VERSION = "1.0.9"
+local VERSION = "1.1"
 local monkeypng = loadImage("monkey.png")
 local monkeyred = loadImage("monkeyred.png")
 local monkeygreen = loadImage("monkeygreen.png")
@@ -281,16 +281,24 @@ local xoffset = 0
 --- @param val any The value we want to search for
 --- @return boolean boolean Returns true if the table contains the given value
 local function includes(tab, val)
-    for i, v in ipairs(tab) do
-        if v == val then
-            return true
+    if type(val) == "table" then
+        for i,v in ipairs(val) do
+            for i, v in ipairs(tab) do
+                if v == val then
+                    return true
+                end
+            end
+        end
+    else
+        for i, v in ipairs(tab) do
+            if v == val then
+                return true
+            end
         end
     end
-
     return false
 end
 
-local cachedCheat = "none"
 
 --- @class Block
 --- @field name string The name of the block that appears in the menu
@@ -472,13 +480,6 @@ do
 
         if active_block ~= self then
             active_block = self
-        end
-        enemyCheat = revealer.get_cheat(client.current_threat())
-        if includes({"Neverlose","GameSense","Pandora","Airflow","Nixware"}, self.conditions) then
-            if enemyCheat.cheat_short ~= cachedCheat and includes({"gs","nl", "pd", "nw", "af"}, enemyCheat) then
-                addNotification("Changed AA based on enemy cheat. (".. enemyCheat.cheat_long ..")", 4, monkeyblue, {0,0,255})
-                cachedCheat = enemyCheat.cheat_short
-            end
         end
     end
 
@@ -794,11 +795,11 @@ local function get_conditions(cmd, local_player)
     local doubletapping = ui_get(references.double_tap) and ui_get(references.double_tap_key)
     local slowwalking = ui_get(references.slow_motion) and ui_get(references.slow_motion_key)
     local enemyCheat = revealer.get_cheat(client.current_threat())
-    local neverlose = enemyCheat.cheat_short == "nl"
-    local gamesense = enemyCheat.cheat_short == "gs"
-    local pandora = enemyCheat.cheat_short == "pd"
-    local airflow = enemyCheat.cheat_short == "af"
-    local nixware = enemyCheat.cheat_short == "nw"
+    local neverlose = enemyCheat.cheat_id == "nl"
+    local gamesense = enemyCheat.cheat_id == "gs"
+    local pandora = enemyCheat.cheat_id == "pd"
+    local airflow = enemyCheat.cheat_id == "af"
+    local nixware = enemyCheat.cheat_id == "nw"
 
     on_ground_ticks = on_ground and on_ground_ticks + 1 or 0
 
@@ -1096,7 +1097,7 @@ local addNotification = function(text, duration, pngtype, color)
 end
 
 local renderIndicators = function()
-    if not active_block or not entity_is_alive(entity_get_local_player()) then
+    if not entity_is_alive(entity_get_local_player()) then
         return
     end
     local indicators = {}
@@ -1141,16 +1142,8 @@ local renderIndicators = function()
             b = 255
         })
     end
-    if ui_get(references.body_aim) then
-        table_insert(indicators, {
-            text = "FB",
-            r = 255,
-            g = 255,
-            b = 255
-        })
-    end
     for k, v in ipairs(indicators) do
-        renderer_text(dimensions[1] / 2 + xoffset, dimensions[2] / 2 + 49 + 10 * k, v.r, v.g, v.b, 255, "-c", 0, v.text)
+        renderer_text(dimensions[1] / 2 + xoffset, dimensions[2] / 2 + 49 + 20 * k, v.r, v.g, v.b, 255, "-c", 0, v.text)
     end
 
     if ui_get(references.double_tap_key) and isLocalDefensive then
@@ -1165,6 +1158,12 @@ local paint = function()
     monkeypng:draw(dimensions[1] / 2 - 18 + xoffset, dimensions[2] / 2 + 4, 40, 40, 255, 255, 255, alpha, true, "")
     renderer_text(dimensions[1] / 2 + 1 + xoffset, dimensions[2] / 2 + 47, 0, 0, 0, alpha, "bdc", 0, "monkeysense")
     renderer_text(dimensions[1] / 2 + xoffset, dimensions[2] / 2 + 47, 255, 255, 255, alpha, "bdc", 0, "monkeysense")
+    for index, value in ipairs(blocks) do
+        if value.enabled and entity_is_alive(entity_get_local_player()) then
+            renderer_text(dimensions[1] / 2 + xoffset + 1, dimensions[2] / 2 + 59, 0, 0, 0, alpha, "-c", 0, string.upper(value.name))
+            renderer_text(dimensions[1] / 2 + xoffset, dimensions[2] / 2 + 59, 255, 255, 255, alpha, "-c", 0, string.upper(value.name))
+        end
+    end
     renderIndicators()
 end
 --#endregion
